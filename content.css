@@ -1,0 +1,295 @@
+/* WhatsApp Forward Killer - Styles */
+
+/* Floating Fact-Check Button */
+.fact-check-button {
+  position: fixed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+}
+
+.fact-check-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.fact-check-button.hidden {
+  display: none;
+}
+
+/* Modal Overlay */
+.fact-check-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Content */
+.fact-check-content {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Close Button */
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* Loading Spinner */
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Status Icons */
+.status-icon {
+  font-size: 60px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Result Status Colors */
+.fact-check-content.verified {
+  border-left: 5px solid #10b981;
+}
+
+.fact-check-content.verified h2 {
+  color: #10b981;
+}
+
+.fact-check-content.questionable {
+  border-left: 5px solid #f59e0b;
+}
+
+.fact-check-content.questionable h2 {
+  color: #f59e0b;
+}
+
+.fact-check-content.fake {
+  border-left: 5px solid #ef4444;
+}
+
+.fact-check-content.fake h2 {
+  color: #ef4444;
+}
+
+.fact-check-content.error {
+  border-left: 5px solid #6b7280;
+}
+
+/* Typography */
+.fact-check-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.fact-check-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 15px 0 10px;
+  color: #333;
+}
+
+.fact-check-content p {
+  color: #666;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Confidence Badge */
+.confidence {
+  background: #f3f4f6;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #667eea;
+  margin: 10px auto;
+  text-align: center;
+  width: fit-content;
+  display: block;
+}
+
+/* Explanation Section */
+.explanation {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+
+.explanation p {
+  text-align: left;
+  font-size: 14px;
+}
+
+/* Sources Section */
+.sources {
+  margin-top: 20px;
+}
+
+.sources ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sources li {
+  margin: 8px 0;
+}
+
+.sources a {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 14px;
+  display: block;
+  padding: 8px;
+  background: #f3f4f6;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+.sources a:hover {
+  background: #e5e7eb;
+}
+
+/* Warning Flags Section */
+.warning-flags {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+
+.warning-flags h3 {
+  color: #856404;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.warning-flags ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warning-flags li {
+  padding: 5px 0;
+  font-size: 13px;
+  color: #856404;
+  position: relative;
+  padding-left: 20px;
+}
+
+.warning-flags li:before {
+  content: "⚠️";
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+}
+
+/* Disclaimer Section */
+.disclaimer {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.disclaimer small {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* Scrollbar Styling */
+.fact-check-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fact-check-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.fact-check-content::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.fact-check-content::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
