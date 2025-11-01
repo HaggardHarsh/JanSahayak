@@ -13,25 +13,40 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Main fact-checking function
 async function handleFactCheck(text) {
-  console.log('Fact-checking text:', text);
+  console.log('Fact-checking with Gemini AI:', text.substring(0, 50));
   
   try {
-    // Step 1: Analyze the text for common fake news patterns
+    // Step 1: Quick local checks (instant)
     const patternAnalysis = analyzePatterns(text);
-    
-    // Step 2: Check against known fake news database (simulated)
     const databaseCheck = checkFakeNewsDatabase(text);
     
-    // Step 3: Use FREE APIs for verification
-    const webSearch = await searchWeb(text);
-    const aiAnalysis = await analyzeWithFreeAI(text, webSearch);
+    // If database has a match, return immediately (most reliable)
+    if (databaseCheck.found) {
+      updateStats('fake');
+      return {
+        verdict: 'fake',
+        confidence: 90,
+        explanation: `⚠️ Known Fake News: This matches debunked claim about "${databaseCheck.matches[0]}". Multiple fact-checkers have verified this is false.`,
+        sources: [
+          { title: 'Alt News - Fact Check', url: 'https://www.altnews.in/' },
+          { title: 'Boom Live', url: 'https://www.boomlive.in/fact-check' }
+        ],
+        details: {
+          patternScore: patternAnalysis.score,
+          flags: patternAnalysis.flags,
+          databaseMatch: true,
+          aiUsed: false
+        }
+      };
+    }
     
-    // Step 4: Combine results and determine verdict
-    const finalResult = combineAnalyses(patternAnalysis, databaseCheck, aiAnalysis, webSearch);
+    // Step 2: Use Gemini AI for intelligent analysis
+    const aiResult = await analyzeWithGeminiAI(text);
     
-    // Update statistics
+    // Step 3: Combine AI with pattern analysis for final verdict
+    const finalResult = combineAIAndPatterns(aiResult, patternAnalysis);
+    
     updateStats(finalResult.verdict);
-    
     return finalResult;
     
   } catch (error) {
@@ -39,9 +54,49 @@ async function handleFactCheck(text) {
     return {
       verdict: 'error',
       confidence: 0,
-      explanation: 'Unable to complete fact check. Please try again.'
+      explanation: 'Unable to complete verification. Please check your internet connection and try again.',
+      sources: []
     };
   }
+}
+
+// Combine AI analysis with pattern detection
+function combineAIAndPatterns(aiResult, patternAnalysis) {
+  let finalVerdict = aiResult.verdict;
+  let finalConfidence = aiResult.confidence;
+  
+  // If both AI and patterns say fake, increase confidence
+  if (aiResult.verdict === 'fake' && patternAnalysis.score > 60) {
+    finalConfidence = Math.min(95, aiResult.confidence + 10);
+  }
+  
+  // If AI says verified but patterns are suspicious, downgrade to questionable
+  if (aiResult.verdict === 'verified' && patternAnalysis.score > 50) {
+    finalVerdict = 'questionable';
+    finalConfidence = 65;
+  }
+  
+  const sources = [
+    { title: 'Alt News - Indian Fact-Checking', url: 'https://www.altnews.in/' },
+    { title: 'Boom Live - Fact Check', url: 'https://www.boomlive.in/fact-check' },
+    { title: 'PIB Fact Check (Govt)', url: 'https://factcheck.pib.gov.in/' },
+    { title: 'WHO Myth Busters', url: 'https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters' }
+  ];
+  
+  return {
+    verdict: finalVerdict,
+    confidence: finalConfidence,
+    explanation: aiResult.explanation,
+    sources: sources.slice(0, 4),
+    details: {
+      patternScore: patternAnalysis.score,
+      flags: [...new Set([...patternAnalysis.flags, ...(aiResult.redFlags || [])])],
+      databaseMatch: false,
+      aiUsed: true,
+      aiConfidence: aiResult.confidence,
+      recommendation: aiResult.recommendation
+    }
+  };
 }
 
 // Pattern-based analysis (heuristics)
@@ -200,6 +255,96 @@ async function searchWikipedia(query) {
   return await response.json();
 }
 */
+// Add at the top of background.js
+const GEMINI_API_KEY = 'AIzaSyCFYH6Wu4DvQIwd8kkTasqDCtAQE5c5_dE'; // Paste your key
+
+// Replace the analyzeWithFreeAI function with this enhanced version
+async function analyzeWithGeminiAI(text) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are a fact-checking expert for Indian WhatsApp forwards. Analyze this message and determine if it's FAKE, QUESTIONABLE, or VERIFIED.
+
+Message: "${text}"
+
+Provide your analysis in this exact JSON format:
+{
+  "verdict": "FAKE or QUESTIONABLE or VERIFIED",
+  "confidence": 0-100,
+  "explanation": "Clear explanation in simple English",
+  "redFlags": ["flag1", "flag2"],
+  "recommendation": "What user should do"
+}
+
+Consider:
+- Known fake news patterns in India
+- Medical misinformation
+- Political propaganda
+- Conspiracy theories
+- Urgency manipulation
+- Unverified claims`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 500
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0]) {
+      throw new Error('Invalid API response');
+    }
+
+    const aiText = data.candidates[0].content.parts[0].text;
+    
+    // Parse JSON response
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Could not parse AI response');
+    }
+    
+    const result = JSON.parse(jsonMatch[0]);
+    
+    return {
+      verdict: result.verdict.toLowerCase(),
+      confidence: result.confidence,
+      explanation: result.explanation,
+      redFlags: result.redFlags || [],
+      recommendation: result.recommendation,
+      method: 'gemini_ai'
+    };
+    
+  } catch (error) {
+    console.error('Gemini AI error:', error);
+    // Fallback to pattern analysis
+    return fallbackAnalysis(text);
+  }
+}
+
+// Fallback if API fails
+function fallbackAnalysis(text) {
+  const patterns = analyzePatterns(text);
+  return {
+    verdict: patterns.score > 60 ? 'fake' : 'questionable',
+    confidence: Math.min(patterns.score, 75),
+    explanation: 'AI analysis unavailable. Using pattern detection.',
+    redFlags: patterns.flags,
+    recommendation: 'Verify from trusted sources',
+    method: 'fallback'
+  };
+}
 
 // FREE API #1: DuckDuckGo Instant Answer API (No key required!)
 async function searchWeb(text) {
