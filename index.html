@@ -1,2 +1,67 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Govt Complaint Portal Helper</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1 data-i18n="title">Govt Complaint Portal Helper</h1>
+        <div class="language-switcher">
+            <button onclick="changeLanguage('en')">English</button>
+            <button onclick="changeLanguage('hi')">हिन्दी</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="category-grid">
+            <button class="category-card" onclick="showGuidance('Roads')">
+                <span data-i18n="roads">Roads & Infrastructure</span>
+            </button>
+            <button class="category-card" onclick="showGuidance('Electricity')">
+                <span data-i18n="electricity">Electricity Services</span>
+            </button>
+            <button class="category-card" onclick="showGuidance('Corruption')">
+                <span data-i18n="corruption">Corruption</span>
+            </button>
+            <button class="category-card" onclick="showGuidance('PublicGrievance')">
+                <span data-i18n="public_grievance">Public Grievance</span>
+            </button>
+        </section>
+
+        <section id="guidance-section" class="guidance-container" style="display: none;">
+            <h2 id="guidance-title"></h2>
+            <div id="guidance-content">
+                <h3 data-i18n="guidance_docs">Required Documents:</h3>
+                <ul id="docList"></ul>
+                <h3 data-i18n="guidance_steps">Steps to file complaint:</h3>
+                <ol id="stepList"></ol>
+                <a href="#" id="portal-link" target="_blank" class="portal-button" data-i18n="go_to_portal">Go to Official Portal</a>
+            </div>
+        </section>
+    </main>
+
+    <button id="chat-toggle" onclick="toggleChat()">
+        <span data-i18n="chat_with_us">Chat</span> 💬
+    </button>
+
+    <div id="chatbot" style="display: none;">
+        <div class="chat-header">
+            <span data-i18n="chatbot_title">Chatbot Helper</span>
+            <button class="chat-close" onclick="toggleChat()">X</button>
+        </div>
+        <div id="chatLog" class="chat-log">
+            <p><strong><span data-i18n="bot_name">Bot:</span></strong> <span data-i18n="bot_greeting">How can I help you find the right portal?</span></p>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="userInput" placeholder="Type here..." onkeydown="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()" data-i18n="submit">Send</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
 </html>
