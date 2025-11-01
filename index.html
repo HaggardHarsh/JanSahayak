@@ -19,16 +19,35 @@
     <main>
         <section class="category-grid">
             <button class="category-card" onclick="showGuidance('Roads')">
-                <span data-i18n="roads">Roads & Infrastructure</span>
+                <div class="card-icon">🛣️</div>
+                <div class="card-content">
+                    <span class="card-title" data-i18n="roads">Roads & Infrastructure</span>
+                    <span class="card-desc" data-i18n="roads_desc">Potholes, street lights, new roads.</span>
+                </div>
             </button>
+            
             <button class="category-card" onclick="showGuidance('Electricity')">
-                <span data-i18n="electricity">Electricity Services</span>
+                <div class="card-icon">💡</div>
+                <div class="card-content">
+                    <span class="card-title" data-i18n="electricity">Electricity Services</span>
+                    <span class="card-desc" data-i18n="electricity_desc">Billing issues, power cuts, meters.</span>
+                </div>
             </button>
+            
             <button class="category-card" onclick="showGuidance('Corruption')">
-                <span data-i18n="corruption">Corruption</span>
+                <div class="card-icon">👤</div>
+                <div class="card-content">
+                    <span class="card-title" data-i18n="corruption">Corruption</span>
+                    <span class="card-desc" data-i18n="corruption_desc">Bribes, misconduct, vigilance.</span>
+                </div>
             </button>
+            
             <button class="category-card" onclick="showGuidance('PublicGrievance')">
-                <span data-i18n="public_grievance">Public Grievance</span>
+                <div class="card-icon">🏛️</div>
+                <div class="card-content">
+                    <span class="card-title" data-i18n="public_grievance">Public Grievance</span>
+                    <span class="card-desc" data-i18n="public_grievance_desc">General issues, pensions, CPGRAMS.</span>
+                </div>
             </button>
         </section>
 
