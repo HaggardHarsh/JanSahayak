@@ -46,7 +46,7 @@ async function handleFactCheck(text) {
     let aiResult = null;
     let usingAI = false;
     
-    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'AIzaSyCFYH6Wu4DvQIwd8kkTasqDCtAQE5c5_dE') {
+    if (GEMINI_API_KEY) {
       console.log('🤖 Attempting Gemini AI analysis...');
       try {
         aiResult = await analyzeWithGeminiAI(text);
