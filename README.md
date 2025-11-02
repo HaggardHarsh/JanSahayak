@@ -465,7 +465,7 @@ MIT License - Feel free to use and modify for your hackathon and beyond!
 
 ## 👥 Team & Contact
 
-Built with ❤️ for Smart India Hackathon
+Built with ❤️ for MSC Hackathon
 
 **Project Goal**: Make the internet safer, one forward at a time!
 
