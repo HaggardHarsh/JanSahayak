@@ -110,57 +110,75 @@ async function analyzeWithGeminiAI(text) {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are an expert fact-checker. Analyze this message and classify it accurately.
+              text: `You are a STRICT fact-checker specialized in detecting misinformation. Be skeptical and conservative in your judgments.
 
-MESSAGE:
+MESSAGE TO ANALYZE:
 "${text}"
 
-CLASSIFICATION RULES:
-1. FAKE (85-95% confidence): 
-   - Known conspiracy theories (5G, microchips, Bill Gates)
-   - Medical misinformation (miracle cures, dangerous treatments)
-   - Debunked claims (WhatsApp University, onion cures)
-   - "Forward urgent" + false health claims
-   
-2. QUESTIONABLE (60-75% confidence):
-   - Unverified claims needing verification
-   - Vague "breaking news" without sources
-   - Suspicious urgency without substance
-   
-3. VERIFIED (75-85% confidence):
-   - From credible sources (WHO, CDC, government)
-   - Factual information that can be confirmed
-   - Reasonable claims without red flags
-   - Educational content
+CLASSIFICATION RULES (Apply rigorously):
 
-IMPORTANT: 
-- Be decisive! Don't default to "questionable" for everything
-- If message is clearly factual, mark as VERIFIED with 75-85% confidence
-- If message is clearly fake news, mark as FAKE with 85-95% confidence
-- Confidence must be 60-95, never 0
+1. FAKE (85-95% confidence):
+   - Known conspiracy theories (5G, microchips, Bill Gates, Illuminati)
+   - Medical misinformation (miracle cures, fake treatments)
+   - Debunked viral claims (onion cures, hot water kills virus)
+   - False statistics or made-up numbers without credible sources
+   - Manipulative urgency ("forward urgent", "before deleted")
+   - Claims that contradict established science
+
+2. QUESTIONABLE (60-75% confidence):
+   - Claims without verifiable sources or citations
+   - Vague "breaking news" or "experts say" without naming sources
+   - Unverified health advice or medical claims
+   - Political claims without attribution
+   - Sensational headlines without context
+   - Anonymous authority ("doctors don't want you to know")
+   - Personal anecdotes presented as universal facts
+   - ANY claim that requires verification but provides no source
+
+3. VERIFIED (75-85% confidence):
+   - Contains specific citations to credible sources (WHO, CDC, peer-reviewed journals)
+   - Well-established scientific facts with broad consensus
+   - Official government announcements with verification links
+   - Historical facts that are widely documented
+   - Basic educational content that's uncontroversial
+   - MUST have clear attribution or be universally accepted knowledge
+
+CRITICAL RULES:
+- DEFAULT to QUESTIONABLE if unsure or if sources are vague
+- ONLY mark as VERIFIED if information is clearly sourced or universally accepted
+- Be EXTRA skeptical of health/medical claims without specific sources
+- ANY urgency language ("share now", "before removed") = automatic red flag
+- Generic statements need specific evidence to be verified
+- Claims about "studies" without naming the study = QUESTIONABLE at minimum
 
 Respond ONLY with this JSON format:
 {
   "verdict": "FAKE or QUESTIONABLE or VERIFIED",
   "confidence": 75,
-  "explanation": "Clear 2-3 sentence explanation",
+  "explanation": "Clear 2-3 sentence explanation citing specific issues",
   "redFlags": ["specific issue 1", "specific issue 2"],
   "recommendation": "Clear advice"
 }
 
 EXAMPLES:
-Input: "According to WHO, washing hands prevents diseases"
-Output: {"verdict":"VERIFIED","confidence":82,"explanation":"This is accurate health advice from WHO","redFlags":[],"recommendation":"Good advice to follow"}
+Input: "According to WHO guidelines published in 2024, washing hands with soap prevents disease transmission"
+Output: {"verdict":"VERIFIED","confidence":82,"explanation":"This cites WHO specifically and reflects established medical consensus on hand hygiene","redFlags":[],"recommendation":"Accurate health information"}
+
+Input: "Doctors say eating garlic cures cancer"
+Output: {"verdict":"QUESTIONABLE","confidence":65,"explanation":"Vague attribution ('doctors say') without naming sources. Medical claims require specific evidence","redFlags":["No source citation","Unverified medical claim"],"recommendation":"Verify from credible medical sources before believing"}
 
 Input: "Bill Gates microchipping vaccines!!!"
-Output: {"verdict":"FAKE","confidence":92,"explanation":"This is a debunked conspiracy theory","redFlags":["Conspiracy theory","Unverified claim"],"recommendation":"Do not share"}
+Output: {"verdict":"FAKE","confidence":95,"explanation":"This is a thoroughly debunked conspiracy theory with no factual basis","redFlags":["Conspiracy theory","Excessive punctuation","Unverified claim"],"recommendation":"Do not share"}
 
-Now analyze the message above:`
+Input: "Forward urgent! NASA says planet alignment will cause 6 days of darkness!"
+Output: {"verdict":"FAKE","confidence":92,"explanation":"Classic viral hoax. NASA has repeatedly debunked planetary alignment darkness claims","redFlags":["Urgency manipulation","False NASA attribution","Debunked claim"],"recommendation":"Do not forward"}
+
+Now analyze the message above with STRICT scrutiny:`
             }]
           }],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 600
+            maxOutputTokens: 800
           },
           safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -279,49 +297,63 @@ async function analyzeWithGroq(text) {
 function analyzePatterns(text) {
   let suspicionScore = 0;
   const flags = [];
-  
+
   const fakeNewsPatterns = [
-    { pattern: /whatsapp.*university/i, score: 30, flag: 'WhatsApp University source' },
-    { pattern: /forward.*urgent/i, score: 25, flag: 'Urgency manipulation' },
-    { pattern: /share.*everyone/i, score: 20, flag: 'Viral spreading tactic' },
-    { pattern: /government.*hiding/i, score: 25, flag: 'Conspiracy theory language' },
-    { pattern: /doctors.*don't.*want/i, score: 30, flag: 'Medical conspiracy' },
-    { pattern: /100%.*cure/i, score: 35, flag: 'Unrealistic medical claim' },
-    { pattern: /miracle.*cure/i, score: 35, flag: 'Miracle cure claim' },
+    { pattern: /whatsapp.*university/i, score: 35, flag: 'WhatsApp University source' },
+    { pattern: /forward.*urgent|forward.*now|share.*urgent/i, score: 30, flag: 'Urgency manipulation' },
+    { pattern: /share.*everyone|send.*everyone|forward.*all/i, score: 25, flag: 'Viral spreading tactic' },
+    { pattern: /government.*hiding|they.*hiding/i, score: 30, flag: 'Conspiracy theory language' },
+    { pattern: /doctors.*don't.*want|doctors.*hiding/i, score: 35, flag: 'Medical conspiracy' },
+    { pattern: /100%.*cure|cure.*100%|guaranteed.*cure/i, score: 40, flag: 'Unrealistic medical claim' },
+    { pattern: /miracle.*cure|magical.*cure|instant.*cure/i, score: 40, flag: 'Miracle cure claim' },
     { pattern: /!!!+/g, score: 15, flag: 'Excessive exclamation marks' },
-    { pattern: /nasa.*said/i, score: 25, flag: 'Unverified authority claim' },
-    { pattern: /breaking.*news/i, score: 20, flag: 'Breaking news claim' },
-    { pattern: /vaccine.*dangerous/i, score: 40, flag: 'Vaccine misinformation' },
-    { pattern: /5g.*corona|5g.*covid/i, score: 45, flag: '5G conspiracy theory' },
+    { pattern: /nasa.*said|nasa.*confirm|according.*nasa/i, score: 30, flag: 'Unverified NASA claim' },
+    { pattern: /breaking.*news|urgent.*news/i, score: 20, flag: 'Sensational breaking news' },
+    { pattern: /vaccine.*dangerous|vaccine.*kill|vaccine.*harm/i, score: 45, flag: 'Vaccine misinformation' },
+    { pattern: /5g.*corona|5g.*covid|5g.*virus/i, score: 50, flag: '5G conspiracy theory' },
     { pattern: /bill gates/i, score: 25, flag: 'Common conspiracy target' },
-    { pattern: /microchip/i, score: 35, flag: 'Microchip conspiracy' },
-    { pattern: /new world order/i, score: 40, flag: 'NWO conspiracy theory' },
-    { pattern: /they don't want you to know/i, score: 30, flag: 'Conspiracy rhetoric' },
-    { pattern: /big pharma/i, score: 25, flag: 'Pharmaceutical conspiracy' },
-    { pattern: /wake up.*sheep/i, score: 35, flag: 'Conspiracy language' },
-    { pattern: /do your own research/i, score: 20, flag: 'Pseudo-research appeal' },
-    { pattern: /before.*deleted|before.*removed/i, score: 25, flag: 'Deletion urgency' }
+    { pattern: /microchip|tracking.*device|mind.*control/i, score: 40, flag: 'Microchip/control conspiracy' },
+    { pattern: /new world order|illuminati|deep state/i, score: 45, flag: 'NWO/Illuminati conspiracy' },
+    { pattern: /they don't want you to know|truth.*hidden/i, score: 35, flag: 'Conspiracy rhetoric' },
+    { pattern: /big pharma|pharma.*corrupt/i, score: 30, flag: 'Pharmaceutical conspiracy' },
+    { pattern: /wake up.*sheep|wake up.*people/i, score: 40, flag: 'Conspiracy language' },
+    { pattern: /do your own research|research.*yourself/i, score: 20, flag: 'Pseudo-research appeal' },
+    { pattern: /before.*deleted|before.*removed|watch.*before/i, score: 30, flag: 'Deletion urgency' },
+    { pattern: /doctors say|experts say|scientists say/i, score: 15, flag: 'Vague authority attribution' },
+    { pattern: /proven fact|scientifically proven/i, score: 20, flag: 'Unsubstantiated proof claim' },
+    { pattern: /they.*want.*sick|keeping.*sick/i, score: 35, flag: 'Malicious intent conspiracy' },
+    { pattern: /natural.*cure|herbal.*cure|home.*remedy.*cure/i, score: 25, flag: 'Unverified natural cure' },
+    { pattern: /cancer.*cure|aids.*cure|diabetes.*cure/i, score: 35, flag: 'Major disease cure claim' },
+    { pattern: /mainstream.*media.*lying|msm.*lying|fake.*news.*media/i, score: 30, flag: 'Media conspiracy' },
+    { pattern: /chemtrails|chem trails/i, score: 45, flag: 'Chemtrails conspiracy' },
+    { pattern: /flat earth/i, score: 50, flag: 'Flat earth conspiracy' },
+    { pattern: /reptilian|lizard people/i, score: 50, flag: 'Reptilian conspiracy' }
   ];
-  
+
   fakeNewsPatterns.forEach(({ pattern, score, flag }) => {
     if (pattern.test(text)) {
       suspicionScore += score;
       flags.push(flag);
     }
   });
-  
+
   const capsRatio = (text.match(/[A-Z]/g) || []).length / text.length;
-  if (capsRatio > 0.3) {
-    suspicionScore += 20;
+  if (capsRatio > 0.4 && text.length > 20) {
+    suspicionScore += 25;
     flags.push('Excessive capitalization');
   }
-  
-  const punctuationRatio = (text.match(/[!?]{2,}/g) || []).length / (text.length / 100);
-  if (punctuationRatio > 0.5) {
-    suspicionScore += 15;
+
+  const punctuationRatio = (text.match(/[!?]{2,}/g) || []).length;
+  if (punctuationRatio >= 3) {
+    suspicionScore += 20;
     flags.push('Excessive punctuation');
   }
-  
+
+  if (text.length < 50 && punctuationRatio >= 2) {
+    suspicionScore += 15;
+    flags.push('Short message with excessive punctuation');
+  }
+
   return {
     score: Math.min(suspicionScore, 100),
     flags: [...new Set(flags)],
@@ -338,33 +370,65 @@ function checkFakeNewsDatabase(text) {
     'nasa planet alignment darkness',
     'onion under bed covid',
     'garlic prevents coronavirus',
+    'garlic cures covid',
     'microchip vaccine',
     'himalayan salt lamp',
     'bill gates population control',
-    'drinking bleach',
+    'bill gates depopulation',
+    'drinking bleach cure',
     'cow urine corona',
+    'cow urine covid',
     'hot water kills virus',
+    'hot water cures covid',
     'holding breath covid test',
     'drinking alcohol kills virus',
+    'drinking alcohol covid',
     '5g coronavirus',
+    '5g causes covid',
+    '5g spreads virus',
     'plastic rice china',
     'fake eggs china',
     'cabbage wax cancer',
     'banana spider eggs',
     'facebook shutting down',
-    'mark zuckerberg giving money'
+    'mark zuckerberg giving money',
+    'drink warm water lemon covid',
+    'ginger turmeric cures coronavirus',
+    'vitamin c cures covid',
+    'sun exposure kills coronavirus',
+    'holding breath test coronavirus',
+    'vaccine contains fetal tissue',
+    'vaccine causes autism',
+    'vaccine magnetism',
+    'vaccine makes magnetic',
+    'vaccine tracking chip',
+    'covid vaccine infertility',
+    'vaccine changes dna',
+    'planet alignment total darkness',
+    'earth six days darkness',
+    'whatsapp gold invitation',
+    'whatsapp expire account',
+    'martinelli video virus',
+    'facebook lottery winner',
+    'facebook biography copy',
+    'clapping sounds corona',
+    'clapping balcony virus',
+    'migraine headband cancer',
+    'plastic bottles cancer',
+    'freezing water bottles cancer',
+    'banana morning weight loss'
   ];
-  
+
   const textLower = text.toLowerCase();
   const matches = knownFakes.filter(fake => {
     const keywords = fake.split(' ');
     return keywords.every(keyword => textLower.includes(keyword));
   });
-  
+
   return {
     found: matches.length > 0,
     matches: matches,
-    confidence: matches.length > 0 ? 90 : 0
+    confidence: matches.length > 0 ? 95 : 0
   };
 }
 
@@ -375,64 +439,68 @@ function checkFakeNewsDatabase(text) {
 function combineAIAndPatterns(aiResult, patternAnalysis) {
   let finalVerdict = aiResult.verdict;
   let finalConfidence = aiResult.confidence;
-  
-  // Ensure confidence is never 0
+
   if (finalConfidence === 0 || !finalConfidence) {
     finalConfidence = 50;
   }
-  
-  // Trust AI more when it has high confidence
+
   if (aiResult.confidence >= 80) {
-    // High confidence AI - trust it
     finalVerdict = aiResult.verdict;
     finalConfidence = aiResult.confidence;
-    
-    // Boost if patterns agree
+
     if (aiResult.verdict === 'fake' && patternAnalysis.score > 50) {
       finalConfidence = Math.min(95, finalConfidence + 5);
     }
+
+    if (aiResult.verdict === 'verified' && patternAnalysis.score > 40) {
+      finalVerdict = 'questionable';
+      finalConfidence = 70;
+      aiResult.explanation = `AI initially suggested verified, but ${patternAnalysis.flags.length} warning signs detected. ${aiResult.explanation}`;
+    }
   }
-  // Medium AI confidence - combine with patterns
   else if (aiResult.confidence >= 50) {
     finalVerdict = aiResult.verdict;
     finalConfidence = aiResult.confidence;
-    
-    // Adjust based on pattern score
+
     if (aiResult.verdict === 'fake' && patternAnalysis.score > 60) {
-      finalConfidence = Math.min(90, finalConfidence + 15);
-    } else if (aiResult.verdict === 'verified' && patternAnalysis.score > 60) {
-      // Patterns suspicious but AI says verified
+      finalConfidence = Math.min(92, finalConfidence + 15);
+    } else if (aiResult.verdict === 'verified' && patternAnalysis.score > 50) {
+      finalVerdict = 'questionable';
+      finalConfidence = 68;
+      aiResult.explanation = `Conflicting signals: AI suggests verified but multiple warning signs detected. ${aiResult.explanation}`;
+    } else if (aiResult.verdict === 'verified' && patternAnalysis.score > 25) {
       finalVerdict = 'questionable';
       finalConfidence = 65;
-    } else if (aiResult.verdict === 'verified' && patternAnalysis.score < 20) {
-      // Clean message, boost confidence
+      aiResult.explanation = `Some warning signs detected that require caution. ${aiResult.explanation}`;
+    } else if (aiResult.verdict === 'verified' && patternAnalysis.score === 0) {
       finalConfidence = Math.min(85, finalConfidence + 10);
+    } else if (aiResult.verdict === 'questionable' && patternAnalysis.score > 60) {
+      finalVerdict = 'fake';
+      finalConfidence = 80;
+      aiResult.explanation = `High pattern score (${patternAnalysis.score}) indicates likely fake news. ${aiResult.explanation}`;
     }
   }
-  // Low AI confidence - rely more on patterns
   else {
     if (patternAnalysis.score > 70) {
       finalVerdict = 'fake';
-      finalConfidence = 75;
+      finalConfidence = 80;
     } else if (patternAnalysis.score > 40) {
       finalVerdict = 'questionable';
-      finalConfidence = 60;
+      finalConfidence = 65;
     } else {
       finalVerdict = aiResult.verdict || 'questionable';
-      finalConfidence = 55;
+      finalConfidence = 60;
     }
   }
-  
-  // Final sanity check - ensure reasonable confidence
-  if (finalConfidence < 50) finalConfidence = 50;
+
+  if (finalConfidence < 55) finalConfidence = 55;
   if (finalConfidence > 95) finalConfidence = 95;
-  
-  // Combine red flags
+
   const allFlags = [...new Set([
     ...patternAnalysis.flags,
     ...(aiResult.redFlags || [])
   ])];
-  
+
   return {
     verdict: finalVerdict,
     confidence: Math.round(finalConfidence),
@@ -443,32 +511,36 @@ function combineAIAndPatterns(aiResult, patternAnalysis) {
       flags: allFlags,
       aiConfidence: aiResult.confidence,
       aiMethod: aiResult.method,
-      recommendation: aiResult.recommendation || 'Verify from trusted sources'
+      recommendation: finalVerdict === 'fake' ? 'Do not share this message' : (finalVerdict === 'questionable' ? 'Verify from trusted sources before sharing' : aiResult.recommendation || 'Verify important claims independently')
     }
   };
 }
 
 function createPatternBasedResult(patternAnalysis) {
-  let verdict = 'verified';
-  let confidence = 70;
-  let explanation = 'No immediate red flags detected using pattern analysis.';
-  
+  let verdict = 'questionable';
+  let confidence = 60;
+  let explanation = 'Unable to verify using AI. Pattern analysis shows no major red flags, but verification from trusted sources is recommended.';
+
   if (patternAnalysis.score >= 70) {
     verdict = 'fake';
     confidence = Math.min(patternAnalysis.score, 85);
     explanation = `Multiple suspicious patterns detected. This message shows ${patternAnalysis.flags.length} warning signs commonly found in misinformation.`;
-  } else if (patternAnalysis.score >= 40) {
+  } else if (patternAnalysis.score >= 35) {
     verdict = 'questionable';
     confidence = 65;
-    explanation = `Some warning signs detected. Verify this information from trusted sources before sharing.`;
+    explanation = `Warning signs detected. Verify this information from trusted sources before sharing.`;
+  } else if (patternAnalysis.score === 0) {
+    verdict = 'questionable';
+    confidence = 55;
+    explanation = 'No obvious red flags found, but without AI verification, we cannot confirm accuracy. Verify important claims independently.';
   }
-  
+
   return {
     verdict,
     confidence,
     explanation,
-    redFlags: patternAnalysis.flags,
-    recommendation: verdict === 'fake' ? 'Do not share this message' : 'Verify before sharing',
+    redFlags: patternAnalysis.flags.length > 0 ? patternAnalysis.flags : ['No AI verification available'],
+    recommendation: verdict === 'fake' ? 'Do not share this message' : 'Verify from credible sources before sharing',
     method: 'pattern_only'
   };
 }
@@ -476,14 +548,16 @@ function createPatternBasedResult(patternAnalysis) {
 function createKnownFakeResult(databaseCheck, patternAnalysis) {
   return {
     verdict: 'fake',
-    confidence: 90,
-    explanation: `⚠️ KNOWN FAKE NEWS: This message contains debunked claims about "${databaseCheck.matches[0]}". Multiple fact-checkers have verified this is false information.`,
+    confidence: 95,
+    explanation: `KNOWN FAKE NEWS: This message contains the debunked claim "${databaseCheck.matches[0].replace(/-/g, ' ')}". Multiple fact-checkers have confirmed this is false information that has been circulating on social media.`,
     sources: getFactCheckSources(),
     details: {
       patternScore: patternAnalysis.score,
-      flags: patternAnalysis.flags,
+      flags: [...patternAnalysis.flags, 'Matches known fake news database'],
       databaseMatch: true,
-      matchedClaims: databaseCheck.matches
+      matchedClaims: databaseCheck.matches,
+      aiMethod: 'database_match',
+      recommendation: 'Do not share this message - it contains verified false information'
     }
   };
 }
