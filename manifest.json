@@ -10,6 +10,8 @@
   "host_permissions": [
     "https://web.whatsapp.com/*",
     "https://factchecktools.googleapis.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://vision.googleapis.com/*",
     "https://api.duckduckgo.com/*"
   ],
   "action": {
@@ -24,7 +26,8 @@
     {
       "matches": ["https://web.whatsapp.com/*"],
       "js": ["content.js"],
-      "css": ["content.css"]
+      "css": ["content.css"],
+      "run_at": "document_idle"
     }
   ],
   "background": {
@@ -40,5 +43,11 @@
       "id": "whatsapp-forward-killer@hackathon.com",
       "strict_min_version": "109.0"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
+  ]
 }
