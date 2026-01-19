@@ -6,7 +6,7 @@
 console.log('🚀 Background service worker loaded - ROBUST VERSION');
 
 // API Keys - REPLACE THESE!
-const GEMINI_API_KEY = 'AIzaSyCuAn7aBBQcU911D9ELMRH1cIAWFD5nAPE';
+const GEMINI_API_KEY = 'AIzaSyBo2XP9W6dSi9Hh0egkn8N0gpDTGBphqvs';
 const GROQ_API_KEY = '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';
 
 // Message Listener
@@ -158,7 +158,7 @@ async function tryAIFactCheck(text) {
   let groqResult = null;
   
   // Try Gemini
-  if (GEMINI_API_KEY && GEMINI_API_KEY !== 'AIzaSyCuAn7aBBQcU911D9ELMRH1cIAWFD5nAPE') {
+  if (GEMINI_API_KEY && GEMINI_API_KEY !== 'AIzaSyBo2XP9W6dSi9Hh0egkn8N0gpDTGBphqvs') {
     try {
       console.log('📡 Calling Gemini API...');
       geminiResult = await callGeminiAPI(text);
